@@ -1,10 +1,10 @@
-function evaluate_response(data) {
-    if (data.button_response == data.correct) {
-        data.accuracy = "correct"
-    } else  {
-        data.accuracy = "incorrect"
-    }
-}
+//function evaluate_response(data) {
+ //   if (data.button_response == data.correct) {
+  //      data.accuracy = "correct"
+   // } else  {
+    //    data.accuracy = "incorrect"
+    //}
+//}
 
 function data_code(data) {
     if (data.expected == "non_masc") {
@@ -24,7 +24,6 @@ function create_tv_array(json_object) {
         obj = {};
         obj.stimulus = json_object[i].stimulus;
         obj.data = {};
-        obj.data.correct = json_object[i].correct;
         tv_array.push(obj)
     }
     return tv_array;
