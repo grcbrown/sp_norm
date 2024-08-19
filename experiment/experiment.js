@@ -18,6 +18,15 @@ const irb = {
 // push to the timeline
 timeline.push(irb);
 
+//PRELOAD AUDIO//
+const preload_array = ['audio/193_B1_CN7.wav', 'audio/246_B2_CN7.wav', 'audio/340_B1_CN7.wav', 'audio/625_B2_CN7.wav', 'audio/723_B1_CN7.wav'];
+const preload_trial = {
+    type: jsPsychPreload,
+    audio: preload_array
+};
+
+timeline.unshift(preload_trial);
+
 //INSTRUCTIONS//
 const instructions = {
     type: jsPsychHtmlButtonResponse,
@@ -27,48 +36,40 @@ const instructions = {
 
 //push to the timeline
 timeline.push(instructions);
+
+//audio trials
+let stim_array = create_tv_array(trial_obj);
 const audio_trials = {
     timeline: [
         {
             type: jsPsychAudioSliderResponse,
-            stimulus: XMLDocument,
+            stimulus: jsPsych.timelineVariable('stimulus'),
             labels: ['Not at all masculine', 'Extremely masculine'],
             prompt: '<p>How masculine is the speaker of this sentence?</p>',
             response_allowed_while_playing: false,
+            response_ends_trial: false,
             require_movement: true,
             slider_width: 500,
             step: 1,
             min: 0,
             max: 100,
-            trial_duration: 10000,
-            
-        }
-    ]
-}
-let stim_array = create_tv_array(stim_objects);
-const exp_trials = {
-    timeline: [
+            trial_duration: 10000
+        },
         {
-            type: jsPsychHtmlVasResponse,
-            labels: ["Not at all masculine", "Extremely masculine"],
-            stimulus: jsPsych.timelineVariable('stimulus'),
-            scale_width: 500,
-            ticks: false,
-            required: true,
-            //response_ends_trial: true,
-            trial_duration: 10000,
-            data: {
-                coding: jsPsych.timelineVariable('coding')
-            },
+            type: jsPsychHtmlKeyboardResponse,
+            choices: [""],
+            stimulus: "",
+            response_ends_trial: false,
+            trial_duration: 1000,
             on_finish: function(data) {
                 jsPsych.setProgressBar((data.trial_index - 1) / (timeline.length + stim_array.length));
             }
         }
     ],
-    timeline_variables: stim_objects, //this is what is referencing the trials that were externally created
+    timeline_variables: stim_array,
     randomize_order: true
-};
-timeline.push(exp_trials);
+}
+timeline.push(audio_trials);
 
 //INSTRUCTIONS//
 const instructions_SRQ = {
