@@ -53,17 +53,20 @@ const audio_trials = {
             step: 1,
             min: 0,
             max: 100,
-            trial_duration: 10000
+            trial_duration: 10000,
+            data: {
+                coding: jsPsych.timelineVariable('coding')
+            },
+            on_finish: function(data) {
+                jsPsych.setProgressBar((data.trial_index - 1) / (timeline.length + stim_array.length));
+            }
         },
         {
             type: jsPsychHtmlKeyboardResponse,
             choices: [""],
             stimulus: "",
             response_ends_trial: false,
-            trial_duration: 1000,
-            on_finish: function(data) {
-                jsPsych.setProgressBar((data.trial_index - 1) / (timeline.length + stim_array.length));
-            }
+            trial_duration: 1000
         }
     ],
     timeline_variables: stim_array,

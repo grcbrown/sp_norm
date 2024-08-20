@@ -1,18 +1,23 @@
 let trial_obj = [
     {
-        "stimulus": "audio/193_B1_CN7.wav"
+        "stimulus": "audio/193_B1_CN7.wav",
+        "coding": 193
     },
     {
-        "stimulus": "audio/246_B2_CN7.wav"
+        "stimulus": "audio/246_B2_CN7.wav",
+        "coding": 246
     },
     {
-        "stimulus": "audio/340_B1_CN7.wav"
+        "stimulus": "audio/340_B1_CN7.wav",
+        "coding": 340
     },
     {
-        "stimulus": "audio/625_B2_CN7.wav"
+        "stimulus": "audio/625_B2_CN7.wav",
+        "coding": 625
     },
     {
-        "stimulus": "audio/723_B1_CN7.wav"
+        "stimulus": "audio/723_B1_CN7.wav",
+        "coding": 723
     }
 ]
 
