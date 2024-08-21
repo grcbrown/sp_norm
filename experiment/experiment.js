@@ -92,7 +92,7 @@ const gender_ideology = {
             type: jsPsychHtmlSliderResponse,
             labels: ["Completely Disagree", "Completely Agree"],
             stimulus: jsPsych.timelineVariable('stimulus'),
-            scale_width: 500,
+            slider_width: 500,
             min: 0,
             max: 100,
             require_movement: true,
