@@ -97,7 +97,7 @@ const gender_ideology = {
             max: 100,
             require_movement: true,
             response_ends_trial: true,
-            trial_duration: 10000,
+            trial_duration: 20000,
             data: {
                 coding: jsPsych.timelineVariable('coding')
             },
