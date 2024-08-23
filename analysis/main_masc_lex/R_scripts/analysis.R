@@ -4,51 +4,51 @@ library(lmerTest)
 library(ggplot2)
 library(MuMIn)
 
-setwd("your_wd_here")
+setwd("/Users/gracebrown/qp1_spk/sp_norm")
 
 # color-blind-friendly palette
 cbPalette <- c("#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7") 
 theme_set(theme_bw())
 
 # LOAD DATA
-lex <- read.csv('./data/masc_lex-merged.csv')
+data <- read.csv('./data/speaker_norming-merged.csv')
 
 # DATA SHAPING
 ## remove participants according to exclusion criteria 
-accuracy_by_participant <- lex %>% filter(!is.na(correct)) %>% group_by(participant_id,condition) %>% filter(accuracy == "correct") %>% count(accuracy)
-exclude <- filter(accuracy_by_participant, n<6)
-print(exclude$participant_id)
-lex <- lex[!(lex$participant_id %in% c(9,13,14,25,32,40,44,52,55,58,62,67,70,72,78,95,97,110,111,113,126,130,133,145,150,151,158,159)),]
+#accuracy_by_participant <- data %>% filter(!is.na(correct)) %>% group_by(participant_id,condition) %>% filter(accuracy == "correct") %>% count(accuracy)
+#exclude <- filter(accuracy_by_participant, n<6)
+#print(exclude$participant_id)
+#data <- data[!(data$participant_id %in% c(9,13,14,25,32,40,44,52,55,58,62,67,70,72,78,95,97,110,111,113,126,130,133,145,150,151,158,159)),]
 
 ## separate numeric and string data
-lex$response_numeric <- ifelse(lex$trial_type=="html-vas-response", lex$response, NA)
-lex$response_numeric <- as.double(lex$response_numeric)
+data$response_numeric <- ifelse(data$trial_type=="audio-slider-response", data$response, NA)
+data$response_numeric <- as.double(data$response_numeric)
 
 ## unpack demographic data
-lex$response_survey <- ifelse(lex$trial_type=="survey", lex$response, NA)
-survey_results <- lex %>% filter(!is.na(response_survey) == TRUE) %>% group_by(participant_id)
-#lex$response_survey <- gsub("'", '"', lex$response_survey)
-#demo <- lex %>% filter(!is.na(response_survey))
+data$response_survey <- ifelse(data$trial_type=="survey", data$response, NA)
+survey_results <- data %>% filter(!is.na(response_survey) == TRUE) %>% group_by(participant_id)
+#data$response_survey <- gsub("'", '"', data$response_survey)
+#demo <- data %>% filter(!is.na(response_survey))
 #json_data <- fromJSON(demo$response_survey)
 ## error with json - invalid char in json text ("P0_Q0": None,) <- need to remove this 
 
-lex$response_political <- ifelse(lex$trial_type == "survey-likert", lex$response, NA)
+data$response_political <- ifelse(data$trial_type == "survey-likert", data$response, NA)
 
 ## calculate SQR score and append it to main df 
-lex$coding[lex$coding == ""] <- NA 
-lex$sqr <- ifelse(lex$trial_type == "html-vas-response" & is.na(lex$coding) == FALSE,
-                       lex$response_numeric, NA)
-lex$gender_trans <- ifelse(lex$trial_type == "html-vas-response" & is.na(lex$coding) == FALSE & lex$coding == "NEGATIVE",
-                           1-lex$sqr, NA)
-lex$gender_link <- ifelse(lex$trial_type == "html-vas-response" & is.na(lex$coding) == FALSE & lex$coding == "POSITIVE",
-                          lex$sqr, NA)
-score_gender_link <- lex %>% filter(!is.na(gender_link)) %>% group_by(participant_id) %>% summarize("score_link" = mean(gender_link))
-lex <- merge(lex, score_gender_link, by = "participant_id", all.x = TRUE)
-score_gender_trans <- lex %>% filter(!is.na(gender_trans)) %>% group_by(participant_id) %>% summarize("score_trans" = mean(gender_trans))
-lex <- merge(lex, score_gender_trans, by = "participant_id", all.x = TRUE)
+data$coding[data$coding == ""] <- NA 
+data$sqr <- ifelse(data$trial_type == "html-vas-response" & is.na(data$coding) == FALSE,
+                       data$response_numeric, NA)
+data$gender_trans <- ifelse(data$trial_type == "html-vas-response" & is.na(data$coding) == FALSE & data$coding == "NEGATIVE",
+                           1-data$sqr, NA)
+data$gender_link <- ifelse(data$trial_type == "html-vas-response" & is.na(data$coding) == FALSE & data$coding == "POSITIVE",
+                          data$sqr, NA)
+score_gender_link <- data %>% filter(!is.na(gender_link)) %>% group_by(participant_id) %>% summarize("score_link" = mean(gender_link))
+data <- merge(data, score_gender_link, by = "participant_id", all.x = TRUE)
+score_gender_trans <- data %>% filter(!is.na(gender_trans)) %>% group_by(participant_id) %>% summarize("score_trans" = mean(gender_trans))
+data <- merge(data, score_gender_trans, by = "participant_id", all.x = TRUE)
 
 ### summarize numeric data 
-exp_data <- lex %>% 
+exp_data <- data %>% 
   filter(!is.na(response)) %>% 
   filter(!is.na(triplet_id)) %>%
   group_by(triplet_id,expected,participant_id,trial_index,condition) %>% 
@@ -67,100 +67,100 @@ print(exp_summary_2)
 
 # VISUALIZATIONS 
 ## overall distribution of ratings 
-hist_by_cond <- ggplot(exp_data,aes(x=response_numeric, fill = expected))+
-  geom_histogram(bins=30)+
-  facet_grid(.~expected) +
-  xlab("Masculinity Rating") +
-  scale_fill_manual(values = cbPalette)
-print(hist_by_cond)
-ggsave(file="./analysis/main_masc_lex/Graphs/hist_by_condition.pdf",width=7,height=4)
-ggsave(file="./analysis/main_masc_lex/Graphs/hist_by_condition.png",width=,height=4)
+#hist_by_cond <- ggplot(exp_data,aes(x=response_numeric, fill = expected))+
+#  geom_histogram(bins=30)+
+#  facet_grid(.~expected) +
+#  xlab("Masculinity Rating") +
+#  scale_fill_manual(values = cbPalette)
+#print(hist_by_cond)
+#ggsave(file="./analysis/main_masc_lex/Graphs/hist_by_condition.pdf",width=7,height=4)
+#ggsave(file="./analysis/main_masc_lex/Graphs/hist_by_condition.png",width=,height=4)
 ## faceted by-triplet average ratings 
-hist_by_triplet <- ggplot(exp_data,aes(x=response_numeric))+
-  geom_histogram(bins=30)+
-  facet_grid(.~triplet_id)
-print(hist_by_triplet) 
+#hist_by_triplet <- ggplot(exp_data,aes(x=response_numeric))+
+#  geom_histogram(bins=30)+
+#  facet_grid(.~triplet_id)
+#print(hist_by_triplet) 
 
 ##barplots
 
-box_all <- ggplot(exp_data,aes(y = response_numeric))+
-  geom_boxplot(aes(fill=expected))+ 
-  ylab("Masculinity Rating") +
-  scale_fill_manual("Expected Masculinity", values=cbPalette) 
-print(box_all)
-ggsave(file="./analysis/main_masc_lex/Graphs/box_all.pdf",width=6,height=4)
-ggsave(file="./analysis/main_masc_lex/Graphs/box_all.png",width=6,height=4)
+#box_all <- ggplot(exp_data,aes(y = response_numeric))+
+#  geom_boxplot(aes(fill=expected))+ 
+#  ylab("Masculinity Rating") +
+#  scale_fill_manual("Expected Masculinity", values=cbPalette) 
+#print(box_all)
+#ggsave(file="./analysis/main_masc_lex/Graphs/box_all.pdf",width=6,height=4)
+#ggsave(file="./analysis/main_masc_lex/Graphs/box_all.png",width=6,height=4)
 
-exp_data_bar <- exp_data %>%
-  group_by(expected) %>%
-  summarise( 
-    n=n(),
-    mean=mean(response_numeric),
-    sd=sd(response_numeric)
-  ) %>%
-  mutate( se=sd/sqrt(n))  %>%
-  mutate( ic=se * qt((1-0.05)/2 + .5, n-1))
+#exp_data_bar <- exp_data %>%
+#  group_by(expected) %>%
+#  summarise( 
+#    n=n(),
+#    mean=mean(response_numeric),
+#    sd=sd(response_numeric)
+#  ) %>%
+#  mutate( se=sd/sqrt(n))  %>%
+#  mutate( ic=se * qt((1-0.05)/2 + .5, n-1))
 
-bar_all <- ggplot(exp_data_bar, aes(y = mean)) +
-  geom_bar(aes(x = expected, fill = expected), stat="identity", alpha=0.7) +
-  geom_errorbar(aes(x = expected, 
-                    ymin=mean-ic, 
-                    ymax=mean+ic), width=0.4, colour="black", alpha=0.9) + 
-  ylab("Masculinity Rating") +
-  xlab("Lexical Variant Type") +
-  scale_fill_manual(values = cbPalette)
-print(bar_all)
-ggsave(file="./analysis/main_masc_lex/Graphs/bar_all.pdf",width=4,height=4)
-ggsave(file="./analysis/main_masc_lex/Graphs/bar_all.png",width=4,height=4)
+#bar_all <- ggplot(exp_data_bar, aes(y = mean)) +
+#  geom_bar(aes(x = expected, fill = expected), stat="identity", alpha=0.7) +
+#  geom_errorbar(aes(x = expected, 
+#                    ymin=mean-ic, 
+#                    ymax=mean+ic), width=0.4, colour="black", alpha=0.9) + 
+#  ylab("Masculinity Rating") +
+#  xlab("Lexical Variant Type") +
+#  scale_fill_manual(values = cbPalette)
+#print(bar_all)
+#ggsave(file="./analysis/main_masc_lex/Graphs/bar_all.pdf",width=4,height=4)
+#ggsave(file="./analysis/main_masc_lex/Graphs/bar_all.png",width=4,height=4)
 ### by lexical_triplet
-exp_data_1 <- filter(exp_data, triplet_id < 9) %>%
-  group_by(triplet_id,expected) %>%
-  summarise( 
-    n=n(),
-    mean=mean(response_numeric),
-    sd=sd(response_numeric)
-  ) %>%
-  mutate( se=sd/sqrt(n))  %>%
-  mutate( ic=se * qt((1-0.05)/2 + .5, n-1))
-exp_data_2 <- filter(exp_data, triplet_id > 8 & triplet_id < 17)  %>%
-  group_by(triplet_id,expected) %>%
-  summarise( 
-    n=n(),
-    mean=mean(response_numeric),
-    sd=sd(response_numeric)
-  ) %>%
-  mutate( se=sd/sqrt(n))  %>%
-  mutate( ic=se * qt((1-0.05)/2 + .5, n-1))
-exp_data_3 <- filter(exp_data, triplet_id > 16)  %>%
-  group_by(triplet_id,expected) %>%
-  summarise( 
-    n=n(),
-    mean=mean(response_numeric),
-    sd=sd(response_numeric)
-  ) %>%
-  mutate( se=sd/sqrt(n))  %>%
-  mutate( ic=se * qt((1-0.05)/2 + .5, n-1))
+#exp_data_1 <- filter(exp_data, triplet_id < 9) %>%
+#  group_by(triplet_id,expected) %>%
+#  summarise( 
+#    n=n(),
+#    mean=mean(response_numeric),
+#    sd=sd(response_numeric)
+#  ) %>%
+#  mutate( se=sd/sqrt(n))  %>%
+#  mutate( ic=se * qt((1-0.05)/2 + .5, n-1))
+#exp_data_2 <- filter(exp_data, triplet_id > 8 & triplet_id < 17)  %>%
+#  group_by(triplet_id,expected) %>%
+#  summarise( 
+#    n=n(),
+#    mean=mean(response_numeric),
+#    sd=sd(response_numeric)
+#  ) %>%
+#  mutate( se=sd/sqrt(n))  %>%
+#  mutate( ic=se * qt((1-0.05)/2 + .5, n-1))
+#exp_data_3 <- filter(exp_data, triplet_id > 16)  %>%
+#  group_by(triplet_id,expected) %>%
+#  summarise( 
+#    n=n(),
+#    mean=mean(response_numeric),
+#    sd=sd(response_numeric)
+#  ) %>%
+#  mutate( se=sd/sqrt(n))  %>%
+#  mutate( ic=se * qt((1-0.05)/2 + .5, n-1))
 
-exp_data_1$triplet_id <- as.factor(exp_data_1$triplet_id)
-exp_data_2$triplet_id <- as.factor(exp_data_2$triplet_id)
-exp_data_3$triplet_id <- as.factor(exp_data_3$triplet_id)
+#exp_data_1$triplet_id <- as.factor(exp_data_1$triplet_id)
+#exp_data_2$triplet_id <- as.factor(exp_data_2$triplet_id)
+#exp_data_3$triplet_id <- as.factor(exp_data_3$triplet_id)
 
-bar_1 <- ggplot(exp_data_1, aes(x = triplet_id, y = mean, fill = expected)) +
-  stat_summary(fun = mean, geom = "bar", position = position_dodge(width = .9),
-               size = 3) +
-  geom_errorbar(aes(ymin=mean-ic, 
-                    ymax=mean+ic), width=0.3, position = position_dodge(width = .9)) + 
-  ylab("Masculinity Rating") +
-  xlab("Sentence Frame") +
-  ylim(0, 1) + 
-  scale_fill_manual(values = cbPalette, name = "Lexical Variant Type")
-print(bar_1)
-ggsave(file="./analysis/main_masc_lex/Graphs/bar_1.pdf",width=8,height=5)
-ggsave(file="./analysis/main_masc_lex/Graphs/bar_1.png",width=8,height=5)
+#bar_1 <- ggplot(exp_data_1, aes(x = triplet_id, y = mean, fill = expected)) +
+#  stat_summary(fun = mean, geom = "bar", position = position_dodge(width = .9),
+#               size = 3) +
+#  geom_errorbar(aes(ymin=mean-ic, 
+#                    ymax=mean+ic), width=0.3, position = position_dodge(width = .9)) + 
+#  ylab("Masculinity Rating") +
+#  xlab("Sentence Frame") +
+#  ylim(0, 1) + 
+#  scale_fill_manual(values = cbPalette, name = "Lexical Variant Type")
+#print(bar_1)
+#ggsave(file="./analysis/main_masc_lex/Graphs/bar_1.pdf",width=8,height=5)
+#ggsave(file="./analysis/main_masc_lex/Graphs/bar_1.png",width=8,height=5)
 
-bar_2 <- ggplot(exp_data_2, aes(x = triplet_id, y = mean, fill = expected)) +
-  stat_summary(fun = mean, geom = "bar", position = position_dodge(width = .9),
-               size = 3) +
+#bar_2 <- ggplot(exp_data_2, aes(x = triplet_id, y = mean, fill = expected)) +
+#  stat_summary(fun = mean, geom = "bar", position = position_dodge(width = .9),
+#               size = 3) +
   geom_errorbar(aes(ymin=mean-ic, 
                     ymax=mean+ic), width=0.3, position = position_dodge(width = .9)) + 
   ylab("Masculinity Rating") +
