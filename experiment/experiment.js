@@ -32,7 +32,7 @@ const audio_warn = {
 type: jsPsychHtmlButtonResponse,
 choices: ['Start'],
 stimulus: "<p><font size='3'>This study requires you to listen to audio clips. To ensure you can adequately hear the audio presented in this study, the next page will have an audio attention check. Please wear headphones, and be prepared to adjust the volume on your device if necessary. <br><br> When you are ready to begin the audio attention check, click 'Start'. </font></p>",
-response_ends_trial: false,
+response_ends_trial: true,
 trial_duration: 10000
 };
 
@@ -42,12 +42,13 @@ timeline.push(audio_warn);
 //audio check
 const audio_check = {
     type: jsPsychAudioButtonResponse,
+    stimulus: 'audio/gift.wav',
     choices: ['dog', 'friend', 'gift', 'smile', 'blue'],
-    prompt: 'This is an attention check. Click on the word that is being repeated by the speaker.',
+    prompt: '<p><br>This is an attention check. <br><br> Click on the word that is being repeated by the speaker.</p>',
     response_ends_trial: true,
     trial_duration: 20000,
     on_finish: function(data) {
-        if (data.response == 'gift') {
+        if (data.response == 2) {
             data.result = "correct"
         } else{}
             data.result = "incorrect"
@@ -56,17 +57,17 @@ const audio_check = {
 
 var feedback = {
     type: jsPsychHtmlButtonResponse,
-    trial_duration: 5000,
+    //trial_duration: 10000,
     stimulus: function(){
       // The feedback stimulus is a dynamic parameter because we can't know in advance whether
       // the stimulus should be 'correct' or 'incorrect'.
       // Instead, this function will check the accuracy of the last response and use that information to set
       // the stimulus value on each trial.
-      var last_trial_correct = jsPsych.data.get().last(1).values()[0].result;
-      if(last_trial_correct){
-        return "<p>Correct! You are ready to complete the study.</p>"; // the parameter value has to be returned from the function
+      var last_trial_correct = jsPsych.data.get().last(1).values()[0].response;
+      if(last_trial_correct == 2){
+        return "<p>Correct! You are ready to begin the study.</p>"; // the parameter value has to be returned from the function
       } else {
-        return "<p>Incorrect. Pleaes adjust the volume of your device before completing the study.</p>"; // the parameter value has to be returned from the function
+        return "<p>Incorrect. Please adjust the volume of your device before beginning the study.</p>"; // the parameter value has to be returned from the function
       }
     },
     choices: ['Begin Study']
@@ -78,7 +79,7 @@ timeline.push(audio_check,feedback);
 //INSTRUCTIONS//
 const instructions = {
     type: jsPsychHtmlButtonResponse,
-    stimulus: "<p><font size='3'>In this study, you will listen to a series of sentences. Each sentence is produced by a different speaker. While listening to each sentence, you will be prompted to rate the social characteristics of its speaker. To rate the social characteristics of a speaker, click along the scale that appears on your screen. You may click along this scale after the speaker stops talking. Try to respond as quickly as you can. The study will advance automatically if you do not respond within ten seconds. <br><br>Make sure you are wearing headphones. When you're ready to hear the first speaker, click ‘Start’. </font></p>",
+    stimulus: "<p><font size='3'>In this study, you will listen to a series of sentences. Each sentence is produced by a different speaker. While listening to each sentence, you will be prompted to rate the social characteristics of its speaker. To rate the social characteristics of a speaker, click along the scale that appears on your screen. You can click along this scale after the speaker stops talking. Try to respond as quickly as you can. The study will advance automatically if you do not respond within ten seconds. <br><br>Make sure you are wearing headphones. When you're ready to hear the first speaker, click ‘Start’. </font></p>",
     choices: ['Start']
 };
 
