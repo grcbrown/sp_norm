@@ -19,7 +19,7 @@ const irb = {
 timeline.push(irb);
 
 //PRELOAD AUDIO//
-const preload_array = ['audio/193_B1_CN7.wav', 'audio/246_B2_CN7.wav', 'audio/340_B1_CN7.wav', 'audio/625_B2_CN7.wav', 'audio/723_B1_CN7.wav', 'gift.wav'];
+const preload_array = ['audio/193_B1_CN7.wav', 'audio/246_B2_CN7.wav', 'audio/340_B1_CN7.wav', 'audio/625_B2_CN7.wav', 'audio/723_B1_CN7.wav', 'audio/gift.wav'];
 const preload_trial = {
     type: jsPsychPreload,
     audio: preload_array
