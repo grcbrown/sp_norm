@@ -3,6 +3,7 @@ library(lme4)
 library(lmerTest)
 library(ggplot2)
 library(MuMIn)
+library(rjson)
 
 setwd("/Users/gracebrown/qp1_spk/sp_norm")
 
@@ -15,71 +16,80 @@ data <- read.csv('./data/speaker_norming-merged.csv')
 
 # DATA SHAPING
 ## remove participants according to exclusion criteria 
-#accuracy_by_participant <- data %>% filter(!is.na(correct)) %>% group_by(participant_id,condition) %>% filter(accuracy == "correct") %>% count(accuracy)
-#exclude <- filter(accuracy_by_participant, n<6)
-#print(exclude$participant_id)
-#data <- data[!(data$participant_id %in% c(9,13,14,25,32,40,44,52,55,58,62,67,70,72,78,95,97,110,111,113,126,130,133,145,150,151,158,159)),]
+## criteria 1 - failed audio check
+exclude_audio <- data %>% filter(trial_type == "audio-button-response") %>% group_by(workerid) %>% filter(response != 2) 
+print(exclude_audio$workerid)
+data <- data[!(data$workerid %in% c(510, 453, 494, 435, 438, 467, 489)),]
+## criteria 2 - responded to less than 80% of trials 
+exclude_trial <- data %>% filter(!is.na(rt)) %>% filter(trial_type == "audio-slider-response") %>% group_by(workerid) %>% count(workerid)
+exclude2 <- exclude_trial %>% filter(n < 4)
+print(exclude2$workerid)
+data <- data[!(data$workerid %in% c(449, 473, 478, 505, 512, 533, 545)),]
+n_distinct(data$workerid)
 
 ## separate numeric and string data
-data$response_numeric <- ifelse(data$trial_type=="audio-slider-response", data$response, NA)
+data$response_numeric <- ifelse(data$trial_type=="audio-slider-response" | data$trial_type=="html-slider-response", data$response, NA)
 data$response_numeric <- as.double(data$response_numeric)
 
 ## unpack demographic data
 data$response_survey <- ifelse(data$trial_type=="survey", data$response, NA)
-survey_results <- data %>% filter(!is.na(response_survey) == TRUE) %>% group_by(participant_id)
-#data$response_survey <- gsub("'", '"', data$response_survey)
-#demo <- data %>% filter(!is.na(response_survey))
+survey_results <- data %>% filter(!is.na(response_survey) == TRUE) %>% group_by(workerid)
+data$response_survey <- gsub("'", '"', data$response_survey)
+demo <- data %>% filter(!is.na(response_survey))
+demo$response_survey <- str_replace(demo$response, ", 'question1': None", "")
 #json_data <- fromJSON(demo$response_survey)
-## error with json - invalid char in json text ("P0_Q0": None,) <- need to remove this 
+
 
 data$response_political <- ifelse(data$trial_type == "survey-likert", data$response, NA)
 
 ## calculate SQR score and append it to main df 
 data$coding[data$coding == ""] <- NA 
-data$sqr <- ifelse(data$trial_type == "html-vas-response" & is.na(data$coding) == FALSE,
-                       data$response_numeric, NA)
-data$gender_trans <- ifelse(data$trial_type == "html-vas-response" & is.na(data$coding) == FALSE & data$coding == "NEGATIVE",
-                           1-data$sqr, NA)
-data$gender_link <- ifelse(data$trial_type == "html-vas-response" & is.na(data$coding) == FALSE & data$coding == "POSITIVE",
-                          data$sqr, NA)
-score_gender_link <- data %>% filter(!is.na(gender_link)) %>% group_by(participant_id) %>% summarize("score_link" = mean(gender_link))
-data <- merge(data, score_gender_link, by = "participant_id", all.x = TRUE)
-score_gender_trans <- data %>% filter(!is.na(gender_trans)) %>% group_by(participant_id) %>% summarize("score_trans" = mean(gender_trans))
-data <- merge(data, score_gender_trans, by = "participant_id", all.x = TRUE)
+data$sqr_raw <- ifelse(data$trial_type == "html-slider-response" & is.na(data$coding) == FALSE,
+                       data$response_numeric/100, NA)
+data$gender_trans <- ifelse(data$trial_type == "html-slider-response" & is.na(data$coding) == FALSE & data$coding == "NEGATIVE",
+                           (10000-data$sqr)/100, NA)
+data$gender_link <- ifelse(data$trial_type == "html-slider-response" & is.na(data$coding) == FALSE & data$coding == "POSITIVE",
+                          (data$sqr)/100, NA)
+score_gender_link <- data %>% filter(!is.na(gender_link)) %>% group_by(workerid) %>% summarize("score_link" = mean(gender_link))
+data <- merge(data, score_gender_link, by = "workerid", all.x = TRUE)
+score_gender_trans <- data %>% filter(!is.na(gender_trans)) %>% group_by(workerid) %>% summarize("score_trans" = mean(gender_trans))
+data <- merge(data, score_gender_trans, by = "workerid", all.x = TRUE)
+srq_score <- data %>% group_by(workerid) %>% summarize("score" = (score_gender_trans+score_gender_link)/2)
 
 ### summarize numeric data 
 exp_data <- data %>% 
   filter(!is.na(response)) %>% 
-  filter(!is.na(triplet_id)) %>%
-  group_by(triplet_id,expected,participant_id,trial_index,condition) %>% 
-  summarize(response_numeric,score_link,score_trans)
+  group_by(coding) %>% 
+  filter(coding == 193 | coding == 246 | coding == 340 | coding == 625 | coding == 723)
 
-exp_data <- filter(exp_data, is.na(response_numeric)==FALSE)
-#### by expected + triplet_id
-exp_sub_1 <- subset(exp_data, select = -c(trial_index,participant_id)) 
+### rescale response data 
+exp_data$response_numeric <- exp_data$response_numeric/100
+
+exp_data <- filter(exp_data, is.na(response_numeric)==FALSE) 
+exp_data %>% summarize(coding, response_numeric)
+#### mean + variance 
+exp_sub_1 <- subset(exp_data, select = -c(workerid)) 
 exp_summary_1 <- summarize(exp_sub_1, "mean"=mean(response_numeric), "var" = var(response_numeric))
 print(exp_summary_1)
 
-#### by expected + participant 
-exp_sub_2 <- subset(exp_data, select = -c(trial_index,triplet_id)) 
-exp_summary_2 <- summarize(exp_sub_2, "mean"=mean(response_numeric), "var" = var(response_numeric))
-print(exp_summary_2)
-
 # VISUALIZATIONS 
-## overall distribution of ratings 
-#hist_by_cond <- ggplot(exp_data,aes(x=response_numeric, fill = expected))+
-#  geom_histogram(bins=30)+
-#  facet_grid(.~expected) +
-#  xlab("Masculinity Rating") +
-#  scale_fill_manual(values = cbPalette)
-#print(hist_by_cond)
-#ggsave(file="./analysis/main_masc_lex/Graphs/hist_by_condition.pdf",width=7,height=4)
-#ggsave(file="./analysis/main_masc_lex/Graphs/hist_by_condition.png",width=,height=4)
-## faceted by-triplet average ratings 
-#hist_by_triplet <- ggplot(exp_data,aes(x=response_numeric))+
-#  geom_histogram(bins=30)+
-#  facet_grid(.~triplet_id)
-#print(hist_by_triplet) 
+## gen distribution of ratings 
+hist_all <- ggplot(exp_data, aes(x=response_numeric)) + 
+  geom_histogram(bins=30) +
+  xlab("Masculinity Rating") + 
+  scale_fill_manual(values = cbPalette) + 
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+print(hist_all)
+
+## overall distribution of ratings by speaker
+hist_by_spk <- ggplot(exp_data,aes(x=response_numeric, fill = coding))+
+  geom_histogram(bins=30)+
+  facet_grid(.~coding) +
+  xlab("Masculinity Rating") +
+  scale_fill_manual(values = cbPalette, name = "Speaker ID")
+print(hist_by_spk)
+ggsave(file="./analysis/main/Graphs/hist_summary.pdf",width=7,height=4)
+ggsave(file="./analysis/main/Graphs/hist_summary.png",width=,height=4)
 
 ##barplots
 
