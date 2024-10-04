@@ -3,7 +3,6 @@ library(lme4)
 library(lmerTest)
 library(ggplot2)
 library(MuMIn)
-library(rjson)
 
 setwd("/Users/gracebrown/qp1_spk/sp_norm")
 
@@ -12,7 +11,9 @@ cbPalette <- c("#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00",
 theme_set(theme_bw())
 
 # LOAD DATA
-data <- read.csv('./data/speaker_norming-merged.csv')
+raw_data <- read.csv('./data/speaker_norming-merged.csv')
+survey <- read.csv('./data/survey_post.csv')
+data <- left_join(x=raw_data,y=survey,by="workerid")
 
 # DATA SHAPING
 ## remove participants according to exclusion criteria 
@@ -25,22 +26,25 @@ exclude_trial <- data %>% filter(!is.na(rt)) %>% filter(trial_type == "audio-sli
 exclude2 <- exclude_trial %>% filter(n < 4)
 print(exclude2$workerid)
 data <- data[!(data$workerid %in% c(449, 473, 478, 505, 512, 533, 545)),]
-n_distinct(data$workerid)
+total_respondants <- n_distinct(data$workerid)
 
 ## separate numeric and string data
 data$response_numeric <- ifelse(data$trial_type=="audio-slider-response" | data$trial_type=="html-slider-response", data$response, NA)
 data$response_numeric <- as.double(data$response_numeric)
 
 ## unpack demographic data
-data$response_survey <- ifelse(data$trial_type=="survey", data$response, NA)
-survey_results <- data %>% filter(!is.na(response_survey) == TRUE) %>% group_by(workerid)
-data$response_survey <- gsub("'", '"', data$response_survey)
-demo <- data %>% filter(!is.na(response_survey))
-demo$response_survey <- str_replace(demo$response, ", 'question1': None", "")
-#json_data <- fromJSON(demo$response_survey)
-
-
-data$response_political <- ifelse(data$trial_type == "survey-likert", data$response, NA)
+political <- data %>% filter(trial_type == "survey-likert") %>% summarize("workerid" = workerid, "political" = response)
+political$political <- str_replace(political$political, "\\{'Q0': ", "")
+political$political <- str_replace(political$political, "\\}", "")
+data <- left_join(x=data,y=political,by="workerid")
+### gender breakdown 
+gender_summary <- data %>% select(workerid,gender) %>% group_by(gender) %>% reframe("count" = n_distinct(workerid))
+### age breakdown### age breakdowngender_summary
+age_summary <- data %>% filter(!is.na(age)==T) %>% summarize("min_age" = min(age), "mean_age" = mean(age), "max_age" = max(age))
+### region breakdown
+region_summary <- data %>% select(workerid,region) %>% group_by(region) %>% reframe("count" = n_distinct(workerid))
+### education breakdown
+edu_summary <- data %>% select(workerid,education) %>% group_by(education) %>% reframe("count" = n_distinct(workerid))
 
 ## calculate SQR score and append it to main df 
 data$coding[data$coding == ""] <- NA 
@@ -69,7 +73,7 @@ exp_data <- filter(exp_data, is.na(response_numeric)==FALSE)
 exp_data %>% summarize(coding, response_numeric)
 #### mean + variance 
 exp_sub_1 <- subset(exp_data, select = -c(workerid)) 
-exp_summary_1 <- summarize(exp_sub_1, "mean"=mean(response_numeric), "var" = var(response_numeric))
+exp_summary_1 <- summarize(exp_sub_1, "mean"=mean(response_numeric), "var" = var(response_numeric), "sd" = sd(response_numeric))
 print(exp_summary_1)
 
 # VISUALIZATIONS 
